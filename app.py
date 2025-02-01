@@ -1,6 +1,7 @@
 import cv2
 import pytesseract
 import re
+import json
 
 cuadro = 100
 doc = 0
@@ -23,7 +24,25 @@ def texto(imagen):
 
     if len(busquedacol) != 0 and len(busquedacol2) != 0:
         doc = 1
+        
+        identificacion = extraer_info_identificacion(texto)
+        with open('identificacion_colombiana.json', 'w') as f:
+            json.dump(identificacion, f, indent=4)
+        print('Identificación guardada en el archivo JSON')
     print(texto)
+
+def extraer_info_identificacion(texto):
+    nombre = re.search(r'Nombre: ([A-Za-z\s]+)', texto)
+    cedula = re.search(r'(\d{6,10})', texto)  
+    tipo_id = "Cédula de Ciudadanía Colombiana"
+    
+    identificacion = {
+        "tipo_identificacion": tipo_id,
+        "nombre": nombre.group(1) if nombre else "No encontrado",
+        "cedula": cedula.group(1) if cedula else "No encontrado"
+    }
+    
+    return identificacion
 
 while True:
     ret, frame = cap.read()
@@ -31,22 +50,20 @@ while True:
     cv2.rectangle(frame, (cuadro, cuadro), (1280 - cuadro, 720 - cuadro), (0, 255, 0), 2)
 
     if doc == 0:
-        cv2.putText(frame, 'PRESIONE S PARA IDENTIFICAR', (470, 750 - cuadro), cv2.FONT_HERSHEY_SIMPLEX, 0.71, (0, 255, 0), 2)
+        cv2.putText(frame, 'PRESIONE T PARA IDENTIFICAR', (470, 750 - cuadro), cv2.FONT_HERSHEY_SIMPLEX, 0.71, (0, 255, 0), 2)
     elif doc == 1:
         cv2.putText(frame, 'IDENTIDICACIÓN COLOMBIANA', (470, 750 - cuadro), cv2.FONT_HERSHEY_SIMPLEX, 0.71, (0, 255, 255), 2)
         print('Cedula de Ciudadania Colombiana')
     else:
         cv2.putText(frame, 'LA IDENTIDICACIÓN NO ES COLOMBIANA', (470, 750 - cuadro), cv2.FONT_HERSHEY_SIMPLEX, 0.71, (0, 255, 255), 2)
         print('La Cedula de Ciudadania no Colombiana')
-        
-
 
     t = cv2.waitKey(5)
     cv2.imshow('ID INTELIGENTE', frame)
 
     if t == 27:
         break
-    elif t == 83 or 115:
+    elif t == 84 or t == 116:
         texto(frame)
 
 cap.release()
